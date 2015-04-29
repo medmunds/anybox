@@ -1,0 +1,133 @@
+<link rel="import" href="../bower_components/polymer/polymer.html">
+<link rel="import" href="../bower_components/core-pages/core-pages.html">
+<link rel="import" href="../bower_components/paper-tabs/paper-tabs.html">
+<link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Roboto+Condensed'>
+
+<polymer-element name="ssb-app">
+    <template>
+        <style>
+            :host {
+                display: flex;
+                flex-direction: column;
+                height: 100%; /* required for webview to get any height */
+                overflow: hidden;
+            }
+            paper-tabs {
+                /* background: #ECEFF1; */
+                font-family: 'Roboto Condensed', sans-serif;
+            }
+            paper-tabs::shadow #selectionBar {
+                background-color: #2196F3;
+            }
+            paper-tabs paper-tab::shadow #ink {
+                color: #2196F3;
+            }
+        </style>
+
+        <paper-tabs scrollable selected="{{activeTabId}}"
+                on-core-activate="{{onTabActivated}}">
+            <template repeat="{{tab in tabs}}">
+                <paper-tab name="{{tab.id}}">{{tab.title}}</paper-tab>
+            </template>
+        </paper-tabs>
+
+        <core-pages flex selected="{{activeTabId}}">
+            <template repeat="{{tab in tabs}}">
+                <webview name="{{tab.id}}" src="{{tab.url}}"
+                         on-new-window="{{onNewWindowRequested}}"
+                         on-page-title-set="{{onPageTitleSet}}"></webview>
+            </template>
+        </core-pages>
+    </template>
+
+    <script>
+        'use strict';
+
+        const openExternal = require('shell').openExternal;
+
+        const defaultAppTitle = 'Inbox App';
+
+        const defaultTabs = [{
+            id: 'inbox-0',
+            title: 'Inbox',
+            url: 'https://inbox.google.com'
+        }, {
+            id: 'calendar-0',
+            title: 'Calendar',
+            url: 'https://www.google.com/calendar'
+//        }, {
+//            id: 'gmail-0',
+//            title: 'Gmail',
+//            url: 'https://mail.google.com'
+        }];
+
+        Polymer({
+            tabs: defaultTabs, // TODO: restore from previous session
+
+            created: function() {
+                this.activeTabId = this.tabs[0].id;
+            },
+
+            ready: function() {
+                this.updateAppTitleFromActiveTab();
+            },
+
+            getActiveTab: function() {
+                return this.getTabById(this.activeTabId);
+            },
+
+            getTabById: function(tabId) {
+                for (let i = 0; i < this.tabs.length; i++) {
+                    if (this.tabs[i].id == tabId) {
+                        return this.tabs[i];
+                    }
+                }
+                return false;
+            },
+
+            updateAppTitleFromActiveTab: function() {
+                let tab = this.getActiveTab(),
+                    title = '';
+                if (tab) {
+                    title = (tab.title || tab.url || '').trim();
+                }
+                if (!title) {
+                    title = defaultAppTitle;
+                }
+                if (document.title != title) {
+                    document.title = title;
+                }
+            },
+
+            onTabActivated: function(e) {
+                this.updateAppTitleFromActiveTab();
+            },
+
+            onNewWindowRequested: function(e) {
+                let tabId = e.target.attributes.name.value,
+                    tab = this.getTabById(tabId),
+                    url = e.url,
+                    disposition = e.disposition,
+                    frameName = e.frameName;
+
+                e.preventDefault(); // not strictly necessary
+
+                // TODO: match url against openInTabPatterns
+                console.log(`Tab[${tabId}] opening '${url}' as ${disposition} in frame '${frameName}'`);
+                openExternal(url);
+            },
+
+            onPageTitleSet: function(e) {
+                let tabId = e.target.attributes.name.value,
+                    tab = this.getTabById(tabId),
+                    newTitle = e.title;
+                if (tab) {
+                    tab.title = newTitle;
+                    if (tab.id == this.activeTabId) {
+                        this.updateAppTitleFromActiveTab();
+                    }
+                }
+            }
+        });
+    </script>
+</polymer-element>

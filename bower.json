@@ -1,0 +1,10 @@
+{
+  "name": "inbox-app",
+  "version": "0.1.0",
+  "main": "main.js",
+  "dependencies": {
+    "polymer": "Polymer/polymer#^0.5",
+    "core-pages": "Polymer/core-pages#^0.5",
+    "paper-tabs": "Polymer/paper-tabs#^0.5"
+  }
+}
