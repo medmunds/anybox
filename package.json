@@ -4,5 +4,8 @@
   "main": "main.js",
   "devDependencies": {
     "electron-prebuilt": "^0.25.1"
+  },
+  "dependencies": {
+    "lodash": "^3.7.0"
   }
 }

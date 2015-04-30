@@ -43,26 +43,60 @@
     <script>
         'use strict';
 
+        const escapeRegExp = require('lodash/string/escapeRegExp');
         const openExternal = require('shell').openExternal;
 
         const defaultAppTitle = 'Inbox App';
 
+        const uniqueId = (function() {
+            let _uniqueId = 0;
+            return function uniqueId(prefix) {
+                return (prefix || '') + (_uniqueId++);
+            };
+        }());
+
         const defaultTabs = [{
-            id: 'inbox-0',
+            id: uniqueId('tab'),
             title: 'Inbox',
             url: 'https://inbox.google.com'
         }, {
-            id: 'calendar-0',
+            id: uniqueId('tab'),
             title: 'Calendar',
             url: 'https://www.google.com/calendar'
 //        }, {
-//            id: 'gmail-0',
+//            id: uniqueId('tab'),
 //            title: 'Gmail',
 //            url: 'https://mail.google.com'
         }];
 
+        // URL patterns that should open in the SSB, rather than externally.
+        // Strings match at beginning of url; use /regexp/ for more-complicated tests.
+        const defaultOpenInTabPatterns = [
+            'https://accounts.google.com/AddSession',
+            'https://contacts.google.com',
+            'https://inbox.google.com',
+            'https://mail.google.com',
+            'https://www.google.com/calendar',
+            'https://www.google.com/contacts',
+            'https://www.google.com/voice'
+        ];
+
+        function compilePatterns(patterns) {
+            let regexps = patterns.map(function(pattern) {
+                if (pattern instanceof RegExp) {
+                    return pattern.source;
+                } else {
+                    // Convert strings to regexps that match the beginning of the url
+                    return '^' + escapeRegExp(pattern);
+                }
+            });
+            return new RegExp(regexps.join('|'));
+        }
+
+
         Polymer({
             tabs: defaultTabs, // TODO: restore from previous session
+            openInTabRegExp: compilePatterns(defaultOpenInTabPatterns), // TODO: move to prefs
 
             created: function() {
                 this.activeTabId = this.tabs[0].id;
@@ -85,6 +119,22 @@
                 return false;
             },
 
+            newTab: function(url, options) {
+                options = options || {};
+                let title = options.title || 'New Tab', // or domain of url?
+                    id = options.id || uniqueId('tab'),
+                    activate = (options.activate === undefined ? true : options.activate);
+
+                this.tabs.push({
+                    id: id,
+                    title: title,
+                    url: url
+                });
+                if (activate) {
+                    this.activeTabId = id;
+                }
+            },
+
             updateAppTitleFromActiveTab: function() {
                 let tab = this.getActiveTab(),
                     title = '';
@@ -104,17 +154,20 @@
             },
 
             onNewWindowRequested: function(e) {
-                let tabId = e.target.attributes.name.value,
-                    tab = this.getTabById(tabId),
-                    url = e.url,
+                let url = e.url,
                     disposition = e.disposition,
-                    frameName = e.frameName;
+                    activate = /^foreground/.test(disposition); // foreground-tab or foreground-window
+                    // tabId = e.target.attributes.name.value,
+                    // tab = this.getTabById(tabId),
+                    // frameName = e.frameName,
 
-                e.preventDefault(); // not strictly necessary
+                e.preventDefault(); // not strictly necessary - webview doesn't handle new window anyway
 
-                // TODO: match url against openInTabPatterns
-                console.log(`Tab[${tabId}] opening '${url}' as ${disposition} in frame '${frameName}'`);
-                openExternal(url);
+                if (this.openInTabRegExp.test(url)) {
+                    this.newTab(url, { activate: activate });
+                } else {
+                    openExternal(url);
+                }
             },
 
             onPageTitleSet: function(e) {
