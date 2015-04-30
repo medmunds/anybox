@@ -1,7 +1,6 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
 <link rel="import" href="../bower_components/core-pages/core-pages.html">
-<link rel="import" href="../bower_components/paper-tabs/paper-tabs.html">
-<link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Roboto+Condensed'>
+<link rel="import" href="ssb-tabs.html">
 
 <polymer-element name="ssb-app">
     <template>
@@ -12,24 +11,14 @@
                 height: 100%; /* required for webview to get any height */
                 overflow: hidden;
             }
-            paper-tabs {
-                /* background: #ECEFF1; */
-                font-family: 'Roboto Condensed', sans-serif;
-            }
-            paper-tabs::shadow #selectionBar {
-                background-color: #2196F3;
-            }
-            paper-tabs paper-tab::shadow #ink {
-                color: #2196F3;
-            }
         </style>
 
-        <paper-tabs scrollable selected="{{activeTabId}}"
+        <ssb-tabs selected="{{activeTabId}}"
                 on-core-activate="{{onTabActivated}}">
             <template repeat="{{tab in tabs}}">
-                <paper-tab name="{{tab.id}}">{{tab.title}}</paper-tab>
+                <ssb-tab name="{{tab.id}}">{{tab.title}}</ssb-tab>
             </template>
-        </paper-tabs>
+        </ssb-tabs>
 
         <core-pages flex selected="{{activeTabId}}">
             <template repeat="{{tab in tabs}}">
@@ -63,10 +52,10 @@
             id: uniqueId('tab'),
             title: 'Calendar',
             url: 'https://www.google.com/calendar'
-//        }, {
-//            id: uniqueId('tab'),
-//            title: 'Gmail',
-//            url: 'https://mail.google.com'
+        }, {
+            id: uniqueId('tab'),
+            title: 'Inbox 2',
+            url: 'https://inbox.google.com/u/0/?authuser=1'
         }];
 
         // URL patterns that should open in the SSB, rather than externally.
