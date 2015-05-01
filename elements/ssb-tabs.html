@@ -1,19 +1,33 @@
 <link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="../bower_components/paper-tabs/paper-tabs.html">
-<link rel='stylesheet' href='http://fonts.googleapis.com/css?family=Roboto+Condensed'>
+<link rel="import" href="../bower_components/core-selector/core-selector.html">
 
-<polymer-element name="ssb-tabs" extends="paper-tabs">
+<polymer-element name="ssb-tabs" extends="core-selector" role="tablist">
     <template>
         <style>
             :host {
-                background-color: #CFD8DC;
-                font-family: 'Roboto Condensed', sans-serif;
+                background: linear-gradient(to bottom, #e6e6e6, #d0d0d0);
+
+                font-family: menu, sans-serif;
+                font-size: 11.5px;
+                font-weight: normal;
             }
-            ::content #selectionBar {
-                background-color: #607D8B;
+
+            #tabsContainer {
+                display: inline-flex;
+                padding: 8px 10px 0;
+                box-sizing: border-box;
+
+                position: relative;
+                z-index: 1;
+
+                max-width: 100%;
+                white-space: nowrap;
+                overflow: hidden;
             }
         </style>
-        <shadow></shadow>
+        <div id="tabsContainer">
+            <shadow></shadow>
+        </div>
     </template>
 
     <script>
@@ -25,23 +39,112 @@
 </polymer-element>
 
 
-<polymer-element name="ssb-tab" extends="paper-tab">
+<polymer-element name="ssb-tab" role="tab">
     <template>
+        <!-- This stylesheet gets built in the JS below:
         <style>
-            :host(.core-selected) {
-                background-color: #ECEFF1;
+            /* Reverse z-index stacking */
+            :host(:nth-child(1)) { z-index: 99; }
+            :host(:nth-child(2)) { z-index: 98; }
+            :host(:nth-child(3)) { z-index: 97; }
+            ...
+        </style>
+        -->
+        <style>
+            :host {
+                flex: 1;
+
+                box-sizing: border-box;
+                height: 24px;
+                margin: 0 6px;
+
+                display: inline-flex;
+                justify-content: flex-start;
+                align-items: center;
+
+                position: relative;
+
+                cursor: default;
+                -webkit-user-select: none;
+                user-select: none;
+
+                color: #222;
             }
-            ::content #ink {
-                color: #607D8B;
+            :host(.core-selected) {
+                z-index: 101;
+            }
+
+            :host::before {
+                /* Angled tab -- http://lea.verou.me/2013/10/slanted-tabs-with-css-3d-transforms/ */
+                content: '';
+                position: absolute;
+                top: -1px; /* symmetry with bottom */
+                bottom: -1px; /* clip inset shadow bottom */
+                left: -6px;
+                right: -6px;
+                z-index: -1;
+                border: 1px solid #9b9b9b;
+                border-bottom: none;
+                border-radius: 5px 5px 0 0;
+                background: linear-gradient(to bottom, #d8d8d8, #b8b8b8);
+                box-shadow: inset 0 0 0 1px rgba(255, 255, 255, .5);
+                transform: perspective(5px) rotateX(1.0deg);
+            }
+            :host(.core-selected)::before {
+                background: #e7e7e7;
+            }
+
+            #tabIcon {
+                flex: none;
+                margin: 0 4px;
+                min-width: 16px;
+            }
+            #tabIcon ::content img {
+                width: 16px;
+                height: 16px;
+                display: block;
+                vertical-align: middle;
+            }
+
+            #tabLabel {
+                flex: 0 1 auto;
+                padding-right: 12px;
+                /* fade text overflow */
+                -webkit-mask-image: linear-gradient(to left, rgba(0, 0, 0, 0) 1px, rgba(0, 0, 0, 1) 12px);
             }
         </style>
-        <shadow></shadow>
+
+        <div id="tabIcon">
+            <content select="img"></content>
+        </div>
+        <div id="tabLabel">
+            <content></content>
+        </div>
     </template>
 
     <script>
         'use strict';
 
         Polymer({
+            ready: function() {
+                this.generateReverseZIndexCSS(99);
+            },
+
+            generateReverseZIndexCSS: function(maxChildren) {
+                // Insert a new stylesheet (above the template one) with rules like
+                //    :host(:nth-child(1)) { z-index: 99; }
+                //    :host(:nth-child(2)) { z-index: 98; }
+                // to stack tabs front-to-back from left to right
+                let rules = [];
+                for (let i = 1; i <= maxChildren; i++) {
+                    rules.push(`:host(:nth-child(${i})) { z-index: ${maxChildren - i}; }`);
+                }
+
+                let origStyleEl = this.shadowRoot.querySelector('style'),
+                    newStyleEl = document.createElement('style');
+                newStyleEl.appendChild(document.createTextNode(rules.join('\n')));
+                this.shadowRoot.insertBefore(newStyleEl, origStyleEl);
+            }
         });
     </script>
 </polymer-element>

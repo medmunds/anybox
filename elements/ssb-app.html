@@ -16,7 +16,10 @@
         <ssb-tabs selected="{{activeTabId}}"
                 on-core-activate="{{onTabActivated}}">
             <template repeat="{{tab in tabs}}">
-                <ssb-tab name="{{tab.id}}">{{tab.title}}</ssb-tab>
+                <ssb-tab name="{{tab.id}}">
+                    <img src="{{tab.icon || defaultIcon}}">
+                    {{tab.title}}
+                </ssb-tab>
             </template>
         </ssb-tabs>
 
@@ -34,8 +37,10 @@
 
         const escapeRegExp = require('lodash/string/escapeRegExp');
         const openExternal = require('shell').openExternal;
+        const urlParse = require('url').parse;
 
         const defaultAppTitle = 'Inbox App';
+        const defaultIcon = 'default-tab-icon.png';
 
         const uniqueId = (function() {
             let _uniqueId = 0;
@@ -47,14 +52,17 @@
         const defaultTabs = [{
             id: uniqueId('tab'),
             title: 'Inbox',
+            icon: 'https://ssl.gstatic.com/bt/C3341AA7A1A076756462EE2E5CD71C11/ic_product_inbox_16dp_r2_2x.png',
             url: 'https://inbox.google.com'
         }, {
             id: uniqueId('tab'),
             title: 'Calendar',
+            icon: 'https://calendar.google.com/googlecalendar/images/favicon_v2014_30.ico',
             url: 'https://www.google.com/calendar'
         }, {
             id: uniqueId('tab'),
             title: 'Inbox 2',
+            icon: 'https://ssl.gstatic.com/bt/C3341AA7A1A076756462EE2E5CD71C11/ic_product_inbox_16dp_r2_2x.png',
             url: 'https://inbox.google.com/u/0/?authuser=1'
         }];
 
@@ -82,10 +90,15 @@
             return new RegExp(regexps.join('|'));
         }
 
+        function getDomain(url) {
+            return urlParse(url).hostname;
+        }
+
 
         Polymer({
             tabs: defaultTabs, // TODO: restore from previous session
             openInTabRegExp: compilePatterns(defaultOpenInTabPatterns), // TODO: move to prefs
+            defaultIcon: defaultIcon,
 
             created: function() {
                 this.activeTabId = this.tabs[0].id;
@@ -110,7 +123,8 @@
 
             newTab: function(url, options) {
                 options = options || {};
-                let title = options.title || 'New Tab', // or domain of url?
+                let domain = getDomain(url),
+                    title = options.title || domain || 'New Tab',
                     id = options.id || uniqueId('tab'),
                     activate = (options.activate === undefined ? true : options.activate);
 
