@@ -17,7 +17,7 @@
                 on-core-activate="{{onTabActivated}}">
             <template repeat="{{tab in tabs}}">
                 <ssb-tab name="{{tab.id}}">
-                    <img src="{{tab.icon || defaultIcon}}">
+                    <img src="{{tab.icon || defaultTabIcon}}">
                     {{tab.title}}
                 </ssb-tab>
             </template>
@@ -39,8 +39,7 @@
         const openExternal = require('shell').openExternal;
         const urlParse = require('url').parse;
 
-        const defaultAppTitle = 'Inbox App';
-        const defaultIcon = 'default-tab-icon.png';
+        const config = require('./config');
 
         const uniqueId = (function() {
             let _uniqueId = 0;
@@ -49,7 +48,7 @@
             };
         }());
 
-        const defaultTabs = [{
+        const savedTabs = [{ // TODO: move to prefs
             id: uniqueId('tab'),
             title: 'Inbox',
             icon: 'https://ssl.gstatic.com/bt/C3341AA7A1A076756462EE2E5CD71C11/ic_product_inbox_16dp_r2_2x.png',
@@ -65,18 +64,6 @@
             icon: 'https://ssl.gstatic.com/bt/C3341AA7A1A076756462EE2E5CD71C11/ic_product_inbox_16dp_r2_2x.png',
             url: 'https://inbox.google.com/u/0/?authuser=1'
         }];
-
-        // URL patterns that should open in the SSB, rather than externally.
-        // Strings match at beginning of url; use /regexp/ for more-complicated tests.
-        const defaultOpenInTabPatterns = [
-            'https://accounts.google.com/AddSession',
-            'https://contacts.google.com',
-            'https://inbox.google.com',
-            'https://mail.google.com',
-            'https://www.google.com/calendar',
-            'https://www.google.com/contacts',
-            'https://www.google.com/voice'
-        ];
 
         function compilePatterns(patterns) {
             let regexps = patterns.map(function(pattern) {
@@ -96,11 +83,18 @@
 
 
         Polymer({
-            tabs: defaultTabs, // TODO: restore from previous session
-            openInTabRegExp: compilePatterns(defaultOpenInTabPatterns), // TODO: move to prefs
-            defaultIcon: defaultIcon,
+            openInTabRegExp: compilePatterns(config.defaultOpenInTabPatterns),
+            defaultTabIcon: config.defaultTabIcon,
 
             created: function() {
+                this.tabs = [];
+                if (savedTabs) {
+                    this.tabs = savedTabs;
+                }
+                if (this.tabs.length < 1) {
+                    let defaultTab = Object.assign({ id: uniqueId('tab') }, config.defaultTab);
+                    this.tabs.push(defaultTab);
+                }
                 this.activeTabId = this.tabs[0].id;
             },
 
@@ -124,7 +118,7 @@
             newTab: function(url, options) {
                 options = options || {};
                 let domain = getDomain(url),
-                    title = options.title || domain || 'New Tab',
+                    title = options.title || domain || config.defaultNewTabName,
                     id = options.id || uniqueId('tab'),
                     activate = (options.activate === undefined ? true : options.activate);
 
@@ -145,7 +139,7 @@
                     title = (tab.title || tab.url || '').trim();
                 }
                 if (!title) {
-                    title = defaultAppTitle;
+                    title = config.appName;
                 }
                 if (document.title != title) {
                     document.title = title;

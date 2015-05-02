@@ -2,6 +2,9 @@
   "name": "inbox-app",
   "version": "0.1.0",
   "main": "main.js",
+  "scripts": {
+    "app": "./node_modules/.bin/electron ."
+  },
   "devDependencies": {
     "electron-prebuilt": "^0.25.1"
   },
