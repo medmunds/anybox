@@ -3,6 +3,7 @@
 exports.appName = "Inbox App";
 
 exports.defaultNewTabName = "New Tab";
+exports.defaultNewTabUrl = 'about:blank';
 exports.defaultTabIcon = 'assets/default-tab-icon.png';
 
 

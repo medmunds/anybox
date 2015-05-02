@@ -36,7 +36,12 @@
         'use strict';
 
         const escapeRegExp = require('lodash/string/escapeRegExp');
+        const find = require('lodash/collection/find');
+        const findIndex = require('lodash/array/findIndex');
+        const ipc = require('ipc');
+        const isFunction = require('lodash/lang/isFunction');
         const openExternal = require('shell').openExternal;
+        const toArray = require('lodash/lang/toArray');
         const urlParse = require('url').parse;
 
         const config = require('./config');
@@ -95,42 +100,160 @@
                     let defaultTab = Object.assign({ id: uniqueId('tab') }, config.defaultTab);
                     this.tabs.push(defaultTab);
                 }
-                this.activeTabId = this.tabs[0].id;
+                this.activateTabByIndex(0);
+
+                // Field commands sent from main process (e.g., menu commands).
+                ipc.on('ssb-command', this.handleSSBCommand.bind(this));
             },
 
             ready: function() {
                 this.updateAppTitleFromActiveTab();
             },
 
-            getActiveTab: function() {
-                return this.getTabById(this.activeTabId);
+            //
+            // Handle commands from main process
+            //
+
+            handleSSBCommand: function(/* command, ...args */) {
+                let args = toArray(arguments),
+                    command = args.shift();
+                if (isFunction(this[command])) {
+                    this[command].apply(this, args);
+                } else {
+                    console.log(`Unhandled ssb-command '${command}'`);
+                }
             },
 
-            getTabById: function(tabId) {
-                for (let i = 0; i < this.tabs.length; i++) {
-                    if (this.tabs[i].id == tabId) {
-                        return this.tabs[i];
-                    }
-                }
-                return false;
+            //
+            // Tab utilities
+            //
+
+            getTabById: function(id) {
+                return find(this.tabs, 'id', id);
             },
+
+            getTabIndex: function(tab) {
+                return findIndex(this.tabs, tab);
+            },
+
+            getTabIndexById: function(id) {
+                return findIndex(this.tabs, 'id', id);
+            },
+
+            //
+            // Tab creation
+            //
 
             newTab: function(url, options) {
+                url = url || config.defaultNewTabUrl;
                 options = options || {};
                 let domain = getDomain(url),
                     title = options.title || domain || config.defaultNewTabName,
                     id = options.id || uniqueId('tab'),
-                    activate = (options.activate === undefined ? true : options.activate);
+                    activate = (options.activate === undefined ? true : options.activate),
+                    currentActiveIndex = this.getActiveTabIndex();
 
-                this.tabs.push({
+                let newTab = {
                     id: id,
                     title: title,
                     url: url
-                });
+                };
+                this.tabs.splice(currentActiveIndex+1, 0, newTab);
+
                 if (activate) {
-                    this.activeTabId = id;
+                    this.activateTabById(id);
                 }
             },
+
+            onNewWindowRequested: function(e) {
+                // Decide whether to open the url in one of our tabs or the system browser...
+                let url = e.url,
+                    disposition = e.disposition,
+                    activate = /^foreground/.test(disposition); // foreground-tab or foreground-window
+
+                e.preventDefault(); // not strictly necessary - webview doesn't handle new window anyway
+
+                if (this.openInTabRegExp.test(url)) {
+                    this.newTab(url, { activate: activate });
+                } else {
+                    openExternal(url);
+                }
+            },
+
+            //
+            // Tab disposal
+            //
+
+            closeTab: function(tab) {
+                this.closeTabByIndex(this.getTabIndex(tab));
+            },
+
+            closeTabByIndex: function(index) {
+                if (index >= 0 && index < this.tabs.length) {
+                    let wasActive = this.tabs[index].id == this.activeTabId;
+                    this.tabs.splice(index, 1);
+
+                    if (this.tabs.length < 1) {
+                        window.close();
+                    } else if (wasActive) {
+                        let newActiveIndex = Math.min(index, this.tabs.length - 1);
+                        this.activateTabByIndex(newActiveIndex);
+                    }
+                }
+            },
+
+            closeTabById: function(id) {
+                this.closeTabByIndex(this.getTabIndexById(id));
+            },
+
+            closeActiveTab: function() {
+                this.closeTabById(this.activeTabId);
+            },
+
+            //
+            // Active tab
+            //
+
+            getActiveTab: function() {
+                return this.getTabById(this.activeTabId);
+            },
+
+            getActiveTabIndex: function() {
+                return this.getTabIndexById(this.activeTabId);
+            },
+
+            onTabActivated: function(e) {
+                this.updateAppTitleFromActiveTab();
+            },
+
+            activateTab: function(tab) {
+                this.activateTabById(tab.id);
+            },
+
+            activateTabById: function(id) {
+                this.activeTabId = id;
+            },
+
+            activateTabByIndex: function(index) {
+                if (index >= 0 && index < this.tabs.length) {
+                    this.activateTabById(this.tabs[index].id);
+                }
+            },
+
+            activateNextTab: function() {
+                let index = this.getActiveTabIndex();
+                this.activateTabByIndex( (index + 1) % this.tabs.length );
+            },
+
+            activatePreviousTab: function() {
+                let index = this.getActiveTabIndex(),
+                    numTabs = this.tabs.length;
+                this.activateTabByIndex( (index - 1 + numTabs) % numTabs );
+            },
+
+            //
+            // Tab titles and favicons
+            //
 
             updateAppTitleFromActiveTab: function() {
                 let tab = this.getActiveTab(),
@@ -146,27 +269,6 @@
                 }
             },
 
-            onTabActivated: function(e) {
-                this.updateAppTitleFromActiveTab();
-            },
-
-            onNewWindowRequested: function(e) {
-                let url = e.url,
-                    disposition = e.disposition,
-                    activate = /^foreground/.test(disposition); // foreground-tab or foreground-window
-                    // tabId = e.target.attributes.name.value,
-                    // tab = this.getTabById(tabId),
-                    // frameName = e.frameName,
-
-                e.preventDefault(); // not strictly necessary - webview doesn't handle new window anyway
-
-                if (this.openInTabRegExp.test(url)) {
-                    this.newTab(url, { activate: activate });
-                } else {
-                    openExternal(url);
-                }
-            },
-
             onPageTitleSet: function(e) {
                 let tabId = e.target.attributes.name.value,
                     tab = this.getTabById(tabId),
@@ -177,6 +279,36 @@
                         this.updateAppTitleFromActiveTab();
                     }
                 }
+            },
+
+            //
+            // Proxy webview functions
+            //
+
+            getWebviewById: function(id) {
+                return this.shadowRoot.querySelector(`webview[name="${id}"]`);
+            },
+
+            reloadTabById: function(id) {
+                let webview = this.getWebviewById(id);
+                if (webview) {
+                    webview.reload();
+                }
+            },
+
+            reloadActiveTab: function() {
+                this.reloadTabById(this.activeTabId);
+            },
+
+            reloadTabByIdIgnoringCache: function(id) {
+                let webview = this.getWebviewById(id);
+                if (webview) {
+                    webview.reloadIgnoringCache();
+                }
+            },
+
+            reloadActiveTabIgnoringCache: function() {
+                this.reloadTabByIdIgnoringCache(this.activeTabId);
             }
         });
     </script>

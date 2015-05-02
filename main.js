@@ -1,23 +1,28 @@
 'use strict';
 
-var app = require('app');
-var BrowserWindow = require('browser-window');
-
 // Report crashes to Electron's server.
 require('crash-reporter').start();
 
+const app = require('app');
+const BrowserWindow = require('browser-window');
+
+const mainMenus = require('./app/main-menus');
+
+
 // Keep a global reference of the window object, if you don't, the window will
 // be closed automatically when the javascript object is GCed.
-var mainWindow = null;
+let mainWindow = null;
 
 // Quit when all windows are closed.
 app.on('window-all-closed', function() {
-    if (process.platform != 'darwin')
-        app.quit();
+    app.quit();
 });
 
 app.on('ready', function() {
+
     mainWindow = new BrowserWindow({width: 800, height: 600});
+
+    mainMenus.init();
 
     //mainWindow.webContents.on('did-finish-load', function() {
     //    // `this` is webContents
