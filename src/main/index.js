@@ -6,7 +6,7 @@ require('crash-reporter').start();
 const app = require('app');
 const BrowserWindow = require('browser-window');
 
-const mainMenus = require('./app/main-menus');
+const mainMenus = require('./main-menus');
 
 
 // Keep a global reference of the window object, if you don't, the window will
@@ -37,7 +37,7 @@ app.on('ready', function() {
     });
 
     // Load our UI
-    mainWindow.loadUrl('file://' + __dirname + '/index.html');
+    mainWindow.loadUrl('file://' + __dirname + '/../browser/index.html');
 
     mainWindow.on('closed', function() {
         mainWindow = null;

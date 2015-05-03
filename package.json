@@ -1,7 +1,7 @@
 {
   "name": "inbox-app",
   "version": "0.1.0",
-  "main": "main.js",
+  "main": "src/main/index.js",
   "scripts": {
     "app": "./node_modules/.bin/electron ."
   },

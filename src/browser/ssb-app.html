@@ -1,5 +1,5 @@
-<link rel="import" href="../bower_components/polymer/polymer.html">
-<link rel="import" href="../bower_components/core-pages/core-pages.html">
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-pages/core-pages.html">
 <link rel="import" href="ssb-tabs.html">
 
 <polymer-element name="ssb-app">
@@ -44,8 +44,8 @@
         const toArray = require('lodash/lang/toArray');
         const urlParse = require('url').parse;
 
-        const config = require('./config');
-        const prefs = require('./elements/prefs');
+        const config = require('../config');
+        const prefs = require('./prefs');
 
         const uniqueId = (function() {
             let _uniqueId = 0;

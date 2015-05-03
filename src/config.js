@@ -4,7 +4,7 @@ exports.appName = "Inbox App";
 
 exports.defaultNewTabName = "New Tab";
 exports.defaultNewTabUrl = 'about:blank';
-exports.defaultTabIcon = 'assets/default-tab-icon.png';
+exports.defaultTabIcon = '../assets/default-tab-icon.png'; // relative to src/browser
 
 exports.initialUrl = 'https://inbox.google.com';
 
