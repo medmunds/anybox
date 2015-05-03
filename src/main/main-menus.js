@@ -121,23 +121,30 @@ const mainMenuTemplate = [{
         accelerator: 'Command+.',
         click: function() { sendSSBCommand('stop'); }
     }, {
-        label: 'Reload',
+        label: 'Reload Tab',
         accelerator: 'Command+R',
         click: function() { sendSSBCommand('reloadActiveTab'); }
     }, {
-        label: 'Reload Ignoring Cache',
+        label: 'Reload Tab (No Cache)',
         accelerator: 'Command+Shift+R',
         click: function() { sendSSBCommand('reloadActiveTabIgnoringCache'); }
     }, {
         type: 'separator'
     }, {
-        label: `Reload ${config.appName}`,
-        // accelerator: 'Command+Alt+R',
-        click: function() { BrowserWindow.getFocusedWindow().reload(); }
-    }, {
-        label: 'Toggle DevTools',
-        accelerator: 'Alt+Command+I',
-        click: function() { BrowserWindow.getFocusedWindow().toggleDevTools(); }
+        label: 'Developer',
+        submenu: [{
+            label: `Reload ${config.appName} App`,
+            // accelerator: 'Command+Alt+R',
+            click: function() { BrowserWindow.getFocusedWindow().reload(); }
+        }, {
+            label: 'Developer Tools (Active Tab)',
+            accelerator: 'Command+Alt+I',
+            click: function() { sendSSBCommand('openDevToolsActiveTab'); }
+        }, {
+            label: `Developer Tools (${config.appName} App)`,
+            accelerator: 'Command+Alt+Shift+I',
+            click: function() { BrowserWindow.getFocusedWindow().toggleDevTools(); }
+        }]
     }]
 }, {
     label: 'Window',

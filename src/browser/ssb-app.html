@@ -307,6 +307,17 @@
 
             reloadActiveTabIgnoringCache: function() {
                 this.reloadTabByIdIgnoringCache(this.activeTabId);
+            },
+
+            openDevToolsById: function(id) {
+                let webview = this.getWebviewById(id);
+                if (webview) {
+                    webview.openDevTools();
+                }
+            },
+
+            openDevToolsActiveTab: function() {
+                this.openDevToolsById(this.activeTabId);
             }
         });
     </script>
