@@ -6,9 +6,9 @@
     "app": "./node_modules/.bin/electron ."
   },
   "devDependencies": {
-    "electron-prebuilt": "^0.25.1"
+    "electron-prebuilt": "^0.25.2"
   },
   "dependencies": {
-    "lodash": "^3.7.0"
+    "lodash": "^3.8.0"
   }
 }

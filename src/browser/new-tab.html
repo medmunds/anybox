@@ -80,13 +80,7 @@
         let form = e.target,
             url = form.elements.url.value;
         if (url) {
-            // For some reason, Electron webview.getUrl() doesn't update
-            // when navigating by assigning document.location...
-            //    document.location.href = url;
-            // ... so we work around it by faking a click on an <a>:
-            let link = document.createElement('a');
-            link.href = url;
-            link.click();
+            document.location.href = url;
         }
     });
 
