@@ -1,0 +1,80 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<polymer-element name="site-picker">
+    <template>
+        <style>
+            .siteList {
+                list-style: none;
+                margin: 0;
+                padding: 0;
+
+                display: flex;
+                flex-direction: row;
+                flex-wrap: wrap;
+
+                font-size: 13px;
+            }
+            .site {
+                width: 86px;
+                height: 98px;
+                border-radius: 2px;
+                border: 1px solid transparent;
+            }
+            .site:hover {
+                border-color: #e5e5e5;
+            }
+            .site > a {
+                margin: 8px 2px;
+                color: #404040;
+                text-decoration: none;
+
+                display: flex;
+                flex-direction: column;
+                align-items: center;
+            }
+            .siteIcon {
+                width: 64px;
+                height: 64px;
+            }
+            .siteIcon > img {
+                max-width: 64px;
+                max-height: 64px;
+                display: block;
+            }
+            .siteLabel {
+                overflow: hidden;
+                width: 84px;
+                white-space: nowrap;
+                text-overflow: ellipsis;
+                line-height: 20px;
+                text-align: center;
+            }
+        </style>
+
+        <template repeat="{{group in sites}}">
+            <h2>{{group.label}}</h2>
+            <ul class="siteList">
+                <template repeat="{{site in group.sites}}">
+                    <li class="site">
+                        <a href="{{site.url}}">
+                            <div class="siteIcon">
+                                <img src="{{site.icon}}">
+                            </div>
+                            <span class="siteLabel">{{site.label}}</span>
+                        </a>
+                    </li>
+                </template>
+            </ul>
+        </template>
+    </template>
+
+    <script src="../sites.js"></script>
+    <script>
+        'use strict';
+
+        Polymer({
+            sites: theSites
+        });
+
+    </script>
+</polymer-element>

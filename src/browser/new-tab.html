@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>New Tab</title>
+    <meta name="viewport" content="width=device-width, minimum-scale=1.0, initial-scale=1.0, user-scalable=yes">
+    <script src="../../bower_components/webcomponentsjs/webcomponents.min.js"></script>
+    <link rel="import" href="site-picker.html">
+
+    <style>
+        html, body {
+            height: 100%;
+            margin: 0;
+            box-sizing: border-box;
+        }
+        body {
+            padding: 2em;
+            background: #fff;
+            color: #404040;
+        }
+        body, input, button {
+            font-family: menu, sans-serif;
+            font-size: 13px;
+        }
+        body /deep/ h2 {
+            font-size: 16px;
+            line-height: 24px;
+            color: #262626;
+            margin-top: 1.5em;
+        }
+        .sronly {
+            /* screen reader only */
+            position: absolute;
+            left: -10000px;
+            top: auto;
+            width: 1px;
+            height: 1px;
+            overflow: hidden;
+        }
+
+        #customNav {
+            display: flex;
+            max-width: 440px;
+        }
+        #customUrl {
+            flex: 1 1 auto;
+            padding: 5px;
+            border: 1px inset;
+            border-radius: 2px 0 0 2px;
+        }
+        #customNav button[type=submit] {
+            border-radius: 0 2px 2px 0;
+        }
+
+        button {
+            border: 1px outset;
+            background: buttonface;
+            padding: 2px 1em;
+        }
+        input:invalid {
+            background-color: #ffe8f1;
+        }
+    </style>
+</head>
+<body>
+<site-picker></site-picker>
+
+<h2>Custom</h2>
+<form id="customNav">
+    <label for="customUrl" class="sronly">URL</label>
+    <input name="url" id="customUrl" type="url" placeholder="https://..." autocomplete="on">
+    <button type="submit">Go</button>
+</form>
+
+
+<script>
+    'use strict';
+
+    document.forms.customNav.addEventListener('submit', function(e) {
+        e.preventDefault();
+        let form = e.target,
+            url = form.elements.url.value;
+        if (url) {
+            // For some reason, Electron webview.getUrl() doesn't update
+            // when navigating by assigning document.location...
+            //    document.location.href = url;
+            // ... so we work around it by faking a click on an <a>:
+            let link = document.createElement('a');
+            link.href = url;
+            link.click();
+        }
+    });
+
+    function autoHttp(e) {
+        let url = this.value.trim();
+        if (!/^http/.test(url)){
+            this.value = "http://" + url;
+        }
+    }
+
+    document.forms.customNav.elements.url.addEventListener('blur', autoHttp);
+</script>
+</body>
+</html>
