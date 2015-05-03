@@ -1,6 +1,6 @@
 'use strict';
 
-exports.appName = "Inbox App";
+exports.appName = "Anybox";
 
 exports.defaultNewTabName = "New Tab";
 exports.defaultNewTabUrl = 'about:blank';

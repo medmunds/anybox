@@ -25,7 +25,7 @@ function sendSSBCommand(/* command, ...args */) {
 const mainMenuTemplate = [{
     label: config.appName, // or on Mac, app name from Info.plist
     submenu: [{
-        label: 'About Inbox App',
+        label: `About ${config.appName}`,
         selector: 'orderFrontStandardAboutPanel:'
     }, {
         type: 'separator'
