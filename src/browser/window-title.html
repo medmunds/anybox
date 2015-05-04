@@ -1,0 +1,46 @@
+<!--
+
+Binds a value to the window's title (document.title)
+
+@element window-title
+
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<polymer-element name="window-title" attributes="windowtitle">
+    <template>
+
+    </template>
+    <script>
+        'use strict';
+        Polymer({
+            /**
+             * Bind an expression to this to set the window's title.
+             * Effectively write-only.
+             *
+             * @attribute windowtitle
+             * @type String
+             * @default current document.title
+             */
+            // "windowtitle" rather than "title", because "title" is special to HTML elements
+            windowtitle: document.title,
+
+            // TODO: use a MutationObserver to hook up two-way binding on document.title
+            _flushTitle: function() {
+                let title = (this.windowtitle || '').trim();
+                if (document.title != title) {
+                    document.title = title;
+                }
+            },
+
+            ready: function() {
+                this._flushTitle();
+            },
+
+            windowtitleChanged: function() {
+                this._flushTitle();
+            }
+        });
+    </script>
+</polymer-element>

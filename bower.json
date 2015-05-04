@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "main": "main.js",
   "dependencies": {
+    "core-localstorage": "Polymer/core-localstorage#^0.5",
     "core-pages": "Polymer/core-pages#^0.5",
     "core-selector": "Polymer/core-selector#^0.5",
     "polymer": "Polymer/polymer#^0.5"

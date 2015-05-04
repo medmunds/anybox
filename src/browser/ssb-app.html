@@ -1,7 +1,9 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-localstorage/core-localstorage.html">
 <link rel="import" href="../../bower_components/core-pages/core-pages.html">
 <link rel="import" href="ssb-tabs.html">
 <link rel="import" href="ssb-webview.html">
+<link rel="import" href="window-title.html">
 
 <polymer-element name="ssb-app">
     <template>
@@ -12,34 +14,36 @@
                 height: 100%; /* required for webview to get any height */
                 overflow: hidden;
             }
+            #pages {
+                flex: 1 1 auto;
+            }
         </style>
 
-        <ssb-tabs selected="{{activeTabId}}"
-                on-core-activate="{{onTabActivated}}">
+        <ssb-tabs id="tabs" selected="{{activeTabIndex}}" hidden?="{{tabs.length < 2}}">
             <template repeat="{{tab in tabs}}">
-                <ssb-tab name="{{tab.id}}">
+                <ssb-tab>
                     <img src="{{tab.icon || defaultTabIcon}}">
                     {{tab.title}}
                 </ssb-tab>
             </template>
         </ssb-tabs>
 
-        <core-pages flex selected="{{activeTabId}}">
+        <core-pages id="pages" selected="{{activeTabIndex}}">
             <template repeat="{{tab in tabs}}">
-                <ssb-webview name="{{tab.id}}" src="{{tab.url}}"
-                             favicon="{{tab.icon}}" pagetitle="{{tab.title}}"
+                <ssb-webview src="{{tab.url}}" favicon="{{tab.icon}}" pagetitle="{{tab.title}}"
                              on-new-window="{{onNewWindowRequested}}"
                         ></ssb-webview>
             </template>
         </core-pages>
+
+        <core-localstorage name="activeTabIndex" value="{{activeTabIndex}}"></core-localstorage>
+        <window-title windowtitle="{{activeTab.title}}"></window-title>
     </template>
 
     <script>
         'use strict';
 
         const escapeRegExp = require('lodash/string/escapeRegExp');
-        const find = require('lodash/collection/find');
-        const findIndex = require('lodash/array/findIndex');
         const ipc = require('ipc');
         const isFunction = require('lodash/lang/isFunction');
         const openExternal = require('shell').openExternal;
@@ -48,13 +52,6 @@
 
         const config = require('../config');
         const prefs = require('./prefs');
-
-        const uniqueId = (function() {
-            let _uniqueId = 0;
-            return function uniqueId(prefix) {
-                return (prefix || '') + (_uniqueId++);
-            };
-        }());
 
         function compilePatterns(patterns) {
             let regexps = patterns.map(function(pattern) {
@@ -72,10 +69,23 @@
             return urlParse(url).hostname;
         }
 
+        function clamp(val, lo, hi) {
+            return Math.max(lo, Math.min(val, hi));
+        }
+        function clampIndex(index, arr) {
+            return clamp(index, 0, arr.length-1);
+        }
+
 
         Polymer({
             openInTabRegExp: compilePatterns(prefs.get('openInTabPatterns', config.defaultOpenInTabPatterns)),
             defaultTabIcon: config.defaultTabIcon,
+
+            activeTabIndex: 0, // default
+
+            computed: {
+                activeTab: 'tabs[activeTabIndex]'
+            },
 
             created: function() {
                 this.tabs = prefs.get('tabs', []);
@@ -87,20 +97,10 @@
                 if (this.tabs.length < 1) {
                     this.newTab(config.initialUrl);
                 }
-
-                let lastActiveId = prefs.get('activeTabId'); // stored in onTabActivated
-                if (lastActiveId && this.getTabById(lastActiveId)) {
-                    this.activateTabById(lastActiveId);
-                } else {
-                    this.activateTabByIndex(0);
-                }
+                this.activeTabIndex = clampIndex(this.activeTabIndex, this.tabs);
 
                 // Field commands sent from main process (e.g., menu commands).
                 ipc.on('ssb-command', this.handleSSBCommand.bind(this));
-            },
-
-            ready: function() {
-                this.updateAppTitleFromActiveTab();
             },
 
             //
@@ -118,49 +118,26 @@
             },
 
             //
-            // Tab utilities
-            //
-
-            getTabById: function(id) {
-                return find(this.tabs, 'id', id);
-            },
-
-            getTabIndex: function(tab) {
-                return findIndex(this.tabs, tab);
-            },
-
-            getTabIndexById: function(id) {
-                return findIndex(this.tabs, 'id', id);
-            },
-
-            makeUniqueTabId: function() {
-                let id;
-                do {
-                    id = uniqueId('tab');
-                } while (this.getTabById(id));
-                return id;
-            },
-
-            //
             // Tab creation
             //
 
             newTab: function(url, options) {
                 url = url || config.defaultNewTabUrl;
                 options = options || {};
-                let title = options.title || getDomain(url) || config.defaultNewTabName,
+                let title = (options.title
+                        || (url !== config.defaultNewTabUrl && getDomain(url))
+                        || config.defaultNewTabName),
                     activate = (options.activate === undefined ? true : options.activate),
-                    currentActiveIndex = this.getActiveTabIndex();
+                    newTabIndex = this.activeTabIndex + 1;
 
                 let newTab = {
-                    id: this.makeUniqueTabId(),
                     title: title,
                     url: url
                 };
-                this.tabs.splice(currentActiveIndex+1, 0, newTab);
+                this.tabs.splice(newTabIndex, 0, newTab);
 
                 if (activate) {
-                    this.activateTabById(newTab.id);
+                    this.activeTabIndex = newTabIndex;
                 }
             },
 
@@ -183,131 +160,56 @@
             // Tab disposal
             //
 
-            closeTab: function(tab) {
-                this.closeTabByIndex(this.getTabIndex(tab));
-            },
-
             closeTabByIndex: function(index) {
                 if (index >= 0 && index < this.tabs.length) {
-                    let wasActive = this.tabs[index].id == this.activeTabId;
+                    let wasActive = index == this.activeTabIndex;
                     this.tabs.splice(index, 1);
 
                     if (this.tabs.length < 1) {
                         window.close();
                     } else if (wasActive) {
-                        let newActiveIndex = Math.min(index, this.tabs.length - 1);
-                        this.activateTabByIndex(newActiveIndex);
+                        // activate previous tab
+                        this.activeTabIndex = Math.max(index - 1, 0);
                     }
                 }
             },
 
-            closeTabById: function(id) {
-                this.closeTabByIndex(this.getTabIndexById(id));
-            },
-
             closeActiveTab: function() {
-                this.closeTabById(this.activeTabId);
+                this.closeTabByIndex(this.activeTabIndex);
             },
 
             //
             // Active tab
             //
 
-            getActiveTab: function() {
-                return this.getTabById(this.activeTabId);
-            },
-
-            getActiveTabIndex: function() {
-                return this.getTabIndexById(this.activeTabId);
-            },
-
-            onTabActivated: function(e) {
-                prefs.set('activeTabId', this.activeTabId);
-                this.updateAppTitleFromActiveTab();
-            },
-
-            activateTab: function(tab) {
-                this.activateTabById(tab.id);
-            },
-
-            activateTabById: function(id) {
-                this.activeTabId = id;
-            },
-
             activateTabByIndex: function(index) {
                 if (index >= 0 && index < this.tabs.length) {
-                    this.activateTabById(this.tabs[index].id);
+                    this.activeTabIndex = index;
                 }
             },
 
             activateNextTab: function() {
-                let index = this.getActiveTabIndex();
-                this.activateTabByIndex( (index + 1) % this.tabs.length );
+                this.$.tabs.selectNext(/*wrapped=*/true);
             },
 
             activatePreviousTab: function() {
-                let index = this.getActiveTabIndex(),
-                    numTabs = this.tabs.length;
-                this.activateTabByIndex( (index - 1 + numTabs) % numTabs );
+                this.$.tabs.selectPrevious(/*wrapped=*/true);
             },
 
             //
-            // Tab titles and favicons
+            // Webview functions for active tab
             //
-
-            updateAppTitleFromActiveTab: function() {
-                let tab = this.getActiveTab(),
-                    title = '';
-                if (tab) {
-                    title = (tab.title || tab.url || '').trim();
-                }
-                if (!title) {
-                    title = config.appName;
-                }
-                if (document.title != title) {
-                    document.title = title;
-                }
-            },
-
-            //
-            // Proxy webview functions
-            //
-
-            getWebviewById: function(id) {
-                return this.shadowRoot.querySelector(`ssb-webview[name="${id}"]`);
-            },
-
-            reloadTabById: function(id) {
-                let webview = this.getWebviewById(id);
-                if (webview) {
-                    webview.reload();
-                }
-            },
 
             reloadActiveTab: function() {
-                this.reloadTabById(this.activeTabId);
-            },
-
-            reloadTabByIdIgnoringCache: function(id) {
-                let webview = this.getWebviewById(id);
-                if (webview) {
-                    webview.reloadIgnoringCache();
-                }
+                this.$.pages.selectedItem.reload();
             },
 
             reloadActiveTabIgnoringCache: function() {
-                this.reloadTabByIdIgnoringCache(this.activeTabId);
-            },
-
-            openDevToolsById: function(id) {
-                let webview = this.getWebviewById(id);
-                if (webview) {
-                    webview.openDevTools();
-                }
+                this.$.pages.selectedItem.reloadIgnoringCache();
             },
 
             openDevToolsActiveTab: function() {
-                this.openDevToolsById(this.activeTabId);
+                this.$.pages.selectedItem.openDevTools();
             }
         });
     </script>
