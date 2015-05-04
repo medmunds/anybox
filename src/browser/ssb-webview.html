@@ -1,0 +1,152 @@
+<!--
+
+Wraps an Electron `<webview>` to work around some weirdnesses
+and better handle data-binding.
+
+@element ssb-webview
+
+-->
+
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<polymer-element name="ssb-webview" attributes="src pagetitle favicon">
+    <template>
+        <webview id="webview" src="[[src]]"
+                 on-did-frame-finish-load="{{onDidFrameLoadFinish}}"
+                 on-page-title-set="{{onPageTitleSet}}"
+                 on-page-favicon-updated="{{onPageFaviconUpdated}}"
+            ></webview>
+    </template>
+    <script>
+        'use strict';
+
+        // ssb-webview can't simply extend="webview", because
+        // "The tag name specified in 'extends' is a custom element name. Use inheritance instead."
+
+        // Proxy many webview method calls through to the webview:
+        let proxiedMethods = [
+            'canGoBack',
+            'canGoForward',
+            'canGoToOffset',
+            'executeJavaScript',
+            'goBack',
+            'goForward',
+            'goToIndex',
+            'goToOffset',
+            'insertCSS',
+            'inspectElement',
+            'openDevTools',
+            'reload',
+            'reloadIgnoringCache',
+            'send',
+            'stop'
+        ].reduce(function(proto, name) {
+            proto[name] = function() {
+                return this.webview && this.webview[name].apply(this.webview, arguments);
+            };
+            return proto;
+        }, {});
+
+
+        Polymer(Polymer.mixin({
+            /**
+             * Replaces the `<webview>` `src` attribute.
+             * Will update when the page is navigated through user action
+             * (but not necessarily on internal redirects).
+             *
+             * @attribute src
+             * @type uri
+             * @default null
+             */
+            src: null,
+
+
+            /**
+             * Reflects the webview's document.title
+             * (and updates whenever that changes).
+             * Read-only.
+             *
+             * @attribute pagetitle
+             * @type String
+             * @default null
+             */
+            pagetitle: null,
+
+
+            /**
+             * Reflects the webview's (first) favicon
+             * (and updates whenever that changes).
+             * Read-only.
+             *
+             * @attribute favicon
+             * @type uri
+             * @default null
+             */
+            favicon: null,
+
+
+            /**
+             * Exposes the webview, once it is initialized.
+             * Read-only.
+             *
+             * @attribute webview
+             * @type webview
+             */
+            webview: null,
+
+
+            ready: function() {
+                this.webview = this.$.webview;
+            },
+
+
+            //
+            // attribute forwarding
+            //
+
+            srcChanged: function(oldSrc, newSrc) {
+                // Only update webview.src if we're not already on that url
+                // (because webview treats setting src to itself as a request to reload).
+                if (this.webview) {
+                    // don't try to call webview.getUrl if no oldSrc (webview throws error
+                    // because internal.guestInstanceId not initialized until src exists)
+                    if (!oldSrc || this.webview.getUrl() != newSrc) {
+                        // console.log(`srcChanged ${oldSrc} ${newSrc}`);
+                        this.webview.src = newSrc;
+                    }
+                }
+            },
+
+            //
+            // update our properties from webview events
+            //
+
+            onDidFrameLoadFinish: function(e) {
+                // This seems to be the closest thing available to onPageDidNavigate
+                // (or some event on changes to the webview's document.location)
+                if (e.isMainFrame) {
+                    let url = this.webview.getUrl();
+                    if (url != this.src) {
+                        this.src = url;
+                    }
+                }
+            },
+
+            onPageTitleSet: function(e) {
+                if (this.pagetitle != e.title) {
+                    this.pagetitle = e.title;
+                }
+            },
+
+            onPageFaviconUpdated: function(e) {
+                let favicons = e.favicons,
+                    favicon = favicons.length && favicons[0];
+                if (favicon && favicon != this.favicon) {
+                    this.favicon = favicon;
+                }
+            }
+
+        }, proxiedMethods));
+
+    </script>
+</polymer-element>

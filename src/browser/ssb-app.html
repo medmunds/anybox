@@ -1,6 +1,7 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/core-pages/core-pages.html">
 <link rel="import" href="ssb-tabs.html">
+<link rel="import" href="ssb-webview.html">
 
 <polymer-element name="ssb-app">
     <template>
@@ -25,11 +26,10 @@
 
         <core-pages flex selected="{{activeTabId}}">
             <template repeat="{{tab in tabs}}">
-                <webview name="{{tab.id}}" src="{{tab.url}}"
-                         on-new-window="{{onNewWindowRequested}}"
-                         on-page-title-set="{{onPageTitleSet}}"
-                         on-page-favicon-updated="{{onPageFaviconUpdated}}"
-                         ></webview>
+                <ssb-webview name="{{tab.id}}" src="{{tab.url}}"
+                             favicon="{{tab.icon}}" pagetitle="{{tab.title}}"
+                             on-new-window="{{onNewWindowRequested}}"
+                        ></ssb-webview>
             </template>
         </core-pages>
     </template>
@@ -269,34 +269,12 @@
                 }
             },
 
-            onPageTitleSet: function(e) {
-                let tabId = e.target.attributes.name.value,
-                    tab = this.getTabById(tabId),
-                    newTitle = e.title;
-                if (tab) {
-                    tab.title = newTitle;
-                    if (tab.id == this.activeTabId) {
-                        this.updateAppTitleFromActiveTab();
-                    }
-                }
-            },
-
-            onPageFaviconUpdated: function(e) {
-                let tabId = e.target.attributes.name.value,
-                    tab = this.getTabById(tabId),
-                    favicons = e.favicons,
-                    favicon = favicons.length && favicons[0];
-                if (favicon && favicon != tab.icon) {
-                    tab.icon = favicon;
-                }
-            },
-
             //
             // Proxy webview functions
             //
 
             getWebviewById: function(id) {
-                return this.shadowRoot.querySelector(`webview[name="${id}"]`);
+                return this.shadowRoot.querySelector(`ssb-webview[name="${id}"]`);
             },
 
             reloadTabById: function(id) {
