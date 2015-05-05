@@ -1,6 +1,7 @@
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 <link rel="import" href="../../bower_components/core-localstorage/core-localstorage.html">
 <link rel="import" href="../../bower_components/core-pages/core-pages.html">
+<link rel="import" href="array-localstorage.html">
 <link rel="import" href="ssb-tabs.html">
 <link rel="import" href="ssb-webview.html">
 <link rel="import" href="window-title.html">
@@ -36,6 +37,8 @@
             </template>
         </core-pages>
 
+        <array-localstorage name="tabs" value="{{tabs}}"
+                on-core-localstorage-load="{{onTabsLoaded}}"></array-localstorage>
         <core-localstorage name="activeTabIndex" value="{{activeTabIndex}}"></core-localstorage>
         <window-title windowtitle="{{activeTab.title}}"></window-title>
     </template>
@@ -51,7 +54,6 @@
         const urlParse = require('url').parse;
 
         const config = require('../config');
-        const prefs = require('./prefs');
 
         function compilePatterns(patterns) {
             let regexps = patterns.map(function(pattern) {
@@ -78,29 +80,30 @@
 
 
         Polymer({
-            openInTabRegExp: compilePatterns(prefs.get('openInTabPatterns', config.defaultOpenInTabPatterns)),
+            openInTabRegExp: compilePatterns(config.defaultOpenInTabPatterns),
             defaultTabIcon: config.defaultTabIcon,
 
             activeTabIndex: 0, // default
+            tabs: null,
 
             computed: {
                 activeTab: 'tabs[activeTabIndex]'
             },
 
             created: function() {
-                this.tabs = prefs.get('tabs', []);
-                // Automatically preserve tabs state in prefs
-                Array.observe(this.tabs, function() {
-                    prefs.set('tabs', this.tabs);
-                }.bind(this));
+                this.tabs = [];
+            },
 
+            ready: function() {
+                // Field commands sent from main process (e.g., menu commands).
+                ipc.on('ssb-command', this.handleSSBCommand.bind(this));
+            },
+
+            onTabsLoaded: function() {
                 if (this.tabs.length < 1) {
                     this.newTab(config.initialUrl);
                 }
                 this.activeTabIndex = clampIndex(this.activeTabIndex, this.tabs);
-
-                // Field commands sent from main process (e.g., menu commands).
-                ipc.on('ssb-command', this.handleSSBCommand.bind(this));
             },
 
             //

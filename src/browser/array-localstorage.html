@@ -1,0 +1,72 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+<link rel="import" href="../../bower_components/core-localstorage/core-localstorage.html">
+
+<!--
+
+Like core-localstorage, but when value is an array of objects, will also
+autosave to localStorage whenever any property of those objects changes.
+(Just a single level deep.)
+
+@element array-localstorage
+-->
+<polymer-element name="array-localstorage" extends="core-localstorage">
+    <script>
+    (function() {
+        // 'use strict'; -- Polymer super() doesn't work in strict mode (it accesses caller)
+
+        var isFunction = require('lodash/lang/isFunction');
+
+        Polymer({
+            // _itemObservers: array of ObjectObserver for each item in this.value.
+            // (The array itself is observed by our core-localstorage base.)
+            // (You might be tempted to use a CompoundObserver of ObjectObservers,
+            // but that won't work: https://github.com/Polymer/observe-js/issues/46)
+            _itemObservers: null,
+
+            created: function() {
+                this.arrayItemChanged = this.arrayItemChanged.bind(this);
+                this.super(arguments);
+            },
+
+            detached: function() {
+                this.closeObservers();
+                this.super(arguments);
+            },
+
+            valueChanged: function() {
+                // the array has changed
+                this.super(arguments);
+                this.updateObservers();
+            },
+
+            updateObservers: function() {
+                // Just replace the observers wholesale
+                this.closeObservers();
+                if (this.value && isFunction(this.value.map)) { // isIterable
+                    this._itemObservers = this.value.map(function(item) {
+                        var observer = new ObjectObserver(item);
+                        observer.open(this.arrayItemChanged);
+                        return observer;
+                    }, this);
+                }
+            },
+
+            closeObservers: function() {
+                if (this._itemObservers) {
+                    this._itemObservers.forEach(function(observer) {
+                        observer.close();
+                    });
+                    this._itemObservers = null;
+                }
+            },
+
+            arrayItemChanged: function() {
+                if (this.loaded && !this.autoSaveDisabled) {
+                    this.save();
+                }
+            }
+
+        })
+    })();
+    </script>
+</polymer-element>
