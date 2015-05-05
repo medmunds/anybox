@@ -44,6 +44,7 @@
     </template>
 
     <script>
+    (function() {
         'use strict';
 
         const escapeRegExp = require('lodash/string/escapeRegExp');
@@ -215,5 +216,6 @@
                 this.$.pages.selectedItem.openDevTools();
             }
         });
+    })();
     </script>
 </polymer-element>

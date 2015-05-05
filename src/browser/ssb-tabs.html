@@ -125,6 +125,7 @@
     </template>
 
     <script>
+    (function() {
         'use strict';
 
         Polymer({
@@ -148,5 +149,6 @@
                 this.shadowRoot.insertBefore(newStyleEl, origStyleEl);
             }
         });
+    })();
     </script>
 </polymer-element>

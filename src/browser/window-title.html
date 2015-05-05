@@ -10,6 +10,7 @@ Binds a value to the window's title (document.title)
 
 <polymer-element name="window-title" attributes="windowtitle" hidden>
     <script>
+    (function() {
         'use strict';
         Polymer({
             /**
@@ -39,5 +40,6 @@ Binds a value to the window's title (document.title)
                 this._flushTitle();
             }
         });
+    })();
     </script>
 </polymer-element>

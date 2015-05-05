@@ -18,6 +18,7 @@ and better handle data-binding.
             ></webview>
     </template>
     <script>
+    (function() {
         'use strict';
 
         // ssb-webview can't simply extend="webview", because
@@ -147,6 +148,6 @@ and better handle data-binding.
             }
 
         }, proxiedMethods));
-
+    })();
     </script>
 </polymer-element>

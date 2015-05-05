@@ -73,6 +73,7 @@
 
 
 <script>
+(function() {
     'use strict';
 
     document.forms.customNav.addEventListener('submit', function(e) {
@@ -86,12 +87,13 @@
 
     function autoHttp(e) {
         let url = this.value.trim();
-        if (!/^http/.test(url)){
+        if (!/^http/.test(url)) {
             this.value = "http://" + url;
         }
     }
 
     document.forms.customNav.elements.url.addEventListener('blur', autoHttp);
+})();
 </script>
 </body>
 </html>
