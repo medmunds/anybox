@@ -6,7 +6,10 @@
     "app": "./node_modules/.bin/electron ."
   },
   "devDependencies": {
-    "electron-prebuilt": "^0.25.2"
+    "electron-packager": "^3.3.0",
+    "electron-prebuilt": "^0.25.2",
+    "gulp": "^3.8.11",
+    "mkdirp": "^0.5.0"
   },
   "dependencies": {
     "lodash": "^3.8.0"
