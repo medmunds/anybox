@@ -2,6 +2,7 @@
 <link rel="import" href="../../bower_components/core-localstorage/core-localstorage.html">
 <link rel="import" href="../../bower_components/core-pages/core-pages.html">
 <link rel="import" href="array-localstorage.html">
+<link rel="import" href="ssb-statusbar.html">
 <link rel="import" href="ssb-tabs.html">
 <link rel="import" href="ssb-webview.html">
 <link rel="import" href="window-title.html">
@@ -32,10 +33,13 @@
         <core-pages id="pages" selected="{{activeTabIndex}}">
             <template repeat="{{tab in tabs}}">
                 <ssb-webview src="{{tab.url}}" favicon="{{tab.icon}}" pagetitle="{{tab.title}}"
-                             on-new-window="{{onNewWindowRequested}}"
-                        ></ssb-webview>
+                    preload="ssb-preload.js"
+                    on-new-window="{{onNewWindowRequested}}"
+                    ></ssb-webview>
             </template>
         </core-pages>
+
+        <ssb-statusbar status="{{status}}"></ssb-statusbar>
 
         <array-localstorage name="tabs" value="{{tabs}}"
                 on-core-localstorage-load="{{onTabsLoaded}}"></array-localstorage>
@@ -86,6 +90,7 @@
 
             activeTabIndex: 0, // default
             tabs: null,
+            status: null,
 
             computed: {
                 activeTab: 'tabs[activeTabIndex]'
@@ -98,6 +103,8 @@
             ready: function() {
                 // Field commands sent from main process (e.g., menu commands).
                 ipc.on('ssb-command', this.handleSSBCommand.bind(this));
+                // Field IPC messages sent up from webviews
+                this.addEventListener('ipc-message', this.handleWebviewIPC.bind(this));
             },
 
             onTabsLoaded: function() {
@@ -118,6 +125,19 @@
                     this[command].apply(this, args);
                 } else {
                     console.log(`Unhandled ssb-command '${command}'`);
+                }
+            },
+
+            handleWebviewIPC: function(event) {
+                let channel = event.channel,
+                    args = event.args;
+                if (isFunction(this[channel])) {
+                    // This isn't the security hole it appears to be, because only our _own_
+                    // scripts have access to ipc.sendToHost from within a webview (preload
+                    // scripts or webviews where we deliberately set nodeintegration=true).
+                    this[channel].apply(this, args);
+                } else {
+                    console.log(`Unhandled webview message '${channel}'`);
                 }
             },
 
@@ -198,6 +218,14 @@
 
             activatePreviousTab: function() {
                 this.$.tabs.selectPrevious(/*wrapped=*/true);
+            },
+
+            //
+            // Status bar
+            //
+
+            showStatus: function(status) {
+                this.status = status;
             },
 
             //

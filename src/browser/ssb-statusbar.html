@@ -1,0 +1,54 @@
+<link rel="import" href="../../bower_components/polymer/polymer.html">
+
+<polymer-element name="ssb-statusbar" attributes="status">
+    <template>
+        <style>
+            :host {
+                display: block;
+                position: absolute;
+                left: 0;
+                bottom: 0;
+
+                font-family: status-bar, sans-serif;
+                /*noinspection CssFloatPxLength*/
+                font-size: 11.5px;
+                font-weight: normal;
+            }
+
+            #status {
+                display: block;
+                width: auto;
+                height: auto;
+                max-height: 6em;
+                padding: 5px 8px;
+
+                background: #e7e7e7;
+                color: #222;
+                border: 1px solid #9b9b9b;
+                border-top-right-radius: 5px;
+                border-bottom: none;
+                border-left: none;
+
+                word-break: break-all; /* wrap long urls */
+
+                opacity: 1;
+                transition: opacity 0.1s ease-in-out, visibility 0.1s ease-in-out;
+            }
+            #status:empty {
+                visibility: hidden;
+                opacity: 0;
+            }
+        </style>
+
+        <div id="status">{{status}}</div>
+    </template>
+
+    <script>
+        (function() {
+            'use strict';
+
+            Polymer({
+            });
+        })();
+    </script>
+</polymer-element>

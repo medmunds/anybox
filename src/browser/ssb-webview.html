@@ -9,9 +9,9 @@ and better handle data-binding.
 
 <link rel="import" href="../../bower_components/polymer/polymer.html">
 
-<polymer-element name="ssb-webview" attributes="src pagetitle favicon">
+<polymer-element name="ssb-webview" attributes="src pagetitle favicon preload">
     <template>
-        <webview id="webview" src="[[src]]"
+        <webview id="webview" src="[[src]]" preload="[[preload]]"
                  on-did-frame-finish-load="{{onDidFrameLoadFinish}}"
                  on-page-title-set="{{onPageTitleSet}}"
                  on-page-favicon-updated="{{onPageFaviconUpdated}}"
