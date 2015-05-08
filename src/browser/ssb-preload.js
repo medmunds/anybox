@@ -4,7 +4,7 @@
 (function() {
     'use strict';
 
-    const find = require('lodash/collection/find');
+    const find = require('lodash.find');
     const ipc = require('ipc');
 
     // Update status bar on link hover

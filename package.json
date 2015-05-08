@@ -9,9 +9,14 @@
     "electron-packager": "^3.3.0",
     "electron-prebuilt": "^0.25.2",
     "gulp": "^3.8.11",
+    "lodash.escaperegexp": "^3.0.0",
+    "lodash.identity": "^3.0.0",
     "mkdirp": "^0.5.0"
   },
   "dependencies": {
-    "lodash": "^3.8.0"
+    "lodash.escaperegexp": "^3.0.0",
+    "lodash.find": "^3.2.0",
+    "lodash.isfunction": "^3.0.3",
+    "lodash.toarray": "^3.0.1"
   }
 }
