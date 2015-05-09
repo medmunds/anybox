@@ -8,10 +8,13 @@
   "devDependencies": {
     "electron-packager": "^3.3.0",
     "electron-prebuilt": "^0.25.2",
+    "expand-home-dir": "0.0.2",
     "gulp": "^3.8.11",
     "lodash.escaperegexp": "^3.0.0",
     "lodash.identity": "^3.0.0",
-    "mkdirp": "^0.5.0"
+    "mkdirp": "^0.5.0",
+    "ncp": "^2.0.0",
+    "rimraf": "^2.3.3"
   },
   "dependencies": {
     "lodash.escaperegexp": "^3.0.0",
