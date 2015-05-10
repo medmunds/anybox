@@ -55,7 +55,7 @@ gulp.task('build', ['clean'], function(cb) {
             asar: false, // bundles app source into an asar
 
             // Mac-specific packaging:
-            //icon: "./src/assets/app.icns",
+            icon: "./anybox.icns",
             //'app-bundle-id': "com.example.myapp", // default 'com.electron.' + opts.name.toLowerCase()
             //'helper-bundle-id': "com.example.myapp.helper",  // default 'com.electron.' + opts.name.toLowerCase() + '.helper'
             'app-version': appVersion // default none
