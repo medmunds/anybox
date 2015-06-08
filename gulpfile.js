@@ -11,27 +11,35 @@ var packager = require('electron-packager');
 var path = require('path');
 var rimraf = require('rimraf');
 
-var platform = os.platform();
+var currentPlatform = os.platform();
 
-//var electronVersion = require('electron-prebuilt/package.json').version;
+var electronVersion = require('electron-prebuilt/package.json').version;
 var appName = require('./src/config.js').appName;
+var projectName = require('./package.json').name;
 var appVersion = require('./package.json').version;
 
 
 var srcDir = '.'; // everything from here will get copied into the app (filtered by ignore and prune below)
 var buildDir = './build';
 
-var installDir = {
-    'darwin': expandHomeDir('~/Applications'),
-    'linux': expandHomeDir('~/bin')
-}[platform];
+var iconFiles = {
+    'darwin': './' + projectName + '.icns',
+    'linux': undefined,
+    'windows': './' + projectName + '.ico'
+};
+
+var installDirs = {
+    'darwin': expandHomeDir('~/Applications'), // LOCALIZATION ISSUE?
+    'linux': expandHomeDir('~/bin'),
+    'windows': undefined // GetFolderPath(Environment.ProgramFiles)
+};
 
 // Ugh. Needs to match electron-packager output:
-var executableName = {
+var executableNames = {
     'darwin': appName + '.app',
     'linux': appName,
     'windows': appName + '.exe'
-}[platform] || '';
+};
 
 
 gulp.task('default', ['build']);
@@ -43,34 +51,73 @@ gulp.task('clean', function(cb) {
 
 
 gulp.task('build', ['clean'], function(cb) {
-    var ignored = getIgnored();
+    return build(currentPlatform, cb);
+});
+
+gulp.task('build-mac', function(cb) {
+    return build('darwin', cb);
+});
+
+gulp.task('build-win', function(cb) {
+    return build('windows', cb);
+});
+
+gulp.task('build-linux', function(cb) {
+    return build('linux', cb);
+});
+
+
+gulp.task('install', function(cb) {
+    return install(currentPlatform, cb);
+});
+
+
+gulp.task('list-ignored', function() {
+    // helpful for debugging ignore list
+    console.log(getIgnored());
+});
+
+
+
+function build(platform, cb) {
+    var ignored = getIgnored(),
+        arch = 'x64';  // just always build x64 for now
     mkdirp(buildDir, function(err) {
         if (err) return cb(err);
         packager({
+            // Input
             dir: '.', // source dir
-            out: buildDir, // dest dir -- must exist
-            name: appName,
             ignore: ignored, // array of regexps for sources to exclude -- *not* cwd-relative
             prune: true, // npm prune devDependencies out of app
+            version: electronVersion,
+
+            // Output
+            out: buildDir, // dest dir -- must exist
+            platform: platform,
+            arch: arch,
+            name: appName,
+            icon: iconFiles[platform],
             asar: false, // bundles app source into an asar
 
             // Mac-specific packaging:
-            icon: "./anybox.icns",
             //'app-bundle-id': "com.example.myapp", // default 'com.electron.' + opts.name.toLowerCase()
             //'helper-bundle-id': "com.example.myapp.helper",  // default 'com.electron.' + opts.name.toLowerCase() + '.helper'
             'app-version': appVersion // default none
             //protocols: [{ schemes: ["scheme"], name: "name" }, ... ],
+            //sign: '' // OS X codesign identity
+
         }, function(err, finalPath) {
             if (err) return cb(err);
             console.log("Completed building " + finalPath);
             return cb(null, finalPath);
         });
     });
-});
+}
 
-
-gulp.task('install', function(cb) {
-    if (!installDir) {
+function install(platform, cb) {
+    var installDir = installDirs[platform],
+        executableName = executableNames[platform];
+    if (!installDir || !executableName) {
         return cb(new Error("Don't know how to install on platform " + platform));
     }
 
@@ -88,14 +135,7 @@ gulp.task('install', function(cb) {
             });
         });
     });
-});
-
-
-gulp.task('list-ignored', function() {
-    // helpful for debugging ignore list
-    console.log(getIgnored());
-});
-
+}
 
 
 function getIgnored() {
