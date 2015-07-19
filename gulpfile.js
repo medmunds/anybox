@@ -103,8 +103,10 @@ function build(platform, cb) {
             //'app-bundle-id': "com.example.myapp", // default 'com.electron.' + opts.name.toLowerCase()
             //'helper-bundle-id': "com.example.myapp.helper",  // default 'com.electron.' + opts.name.toLowerCase() + '.helper'
             'app-version': appVersion // default none
-            //protocols: [{ schemes: ["scheme"], name: "name" }, ... ],
             //sign: '' // OS X codesign identity
+
+            // Windows-specific packaging:
+            // 'version-string': { 'ProductVersion': appVersion, 'ProductName': projectName, etc. }
 
         }, function(err, finalPath) {
             if (err) return cb(err);
@@ -121,7 +123,9 @@ function install(platform, cb) {
         return cb(new Error("Don't know how to install on platform " + platform));
     }
 
-    var builtApp = path.join(buildDir, executableName),
+    var buildSubDir = projectName + '-' + platform + '-x64'; // Grr: electron-packager started auto-creating subdirs of build
+
+    var builtApp = path.join(buildDir, buildSubDir, executableName),
         installedApp = path.join(installDir, executableName);
     // Make sure it's built before we delete the old one...
     fs.access(builtApp, fs.R_OK, function(err) {
